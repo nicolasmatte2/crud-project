@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { Input } from "./ui/input";
 import { Button } from "@/components/ui/button";
-import DialogDemo from "./DialogDemo";
+import { DialogDemo } from "./DialogDemo";
 
 type ITasks = {
   id: number;
   text: string;
 }[];
+
 function TaskApp() {
   const [tasks, setTasks] = useState<ITasks>([]);
   const [inputValue, setInputValue] = useState("");
@@ -15,10 +16,6 @@ function TaskApp() {
     e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
   ) => {
     setInputValue(e.target.value);
-  };
-
-  const handleDeleteTask = (id: number) => {
-    setTasks(tasks.filter((task) => task.id !== id));
   };
 
   const handleSubmit = () => {
@@ -33,7 +30,16 @@ function TaskApp() {
 
     setTasks([...tasks, newTask]);
     setInputValue("");
-    console.log(tasks);
+  };
+
+  const handleDeleteTask = (id: number) => {
+    setTasks(tasks.filter((task) => task.id !== id));
+  };
+
+  const handleSetText = (id: number, newText: string) => {
+    setTasks(
+      tasks.map((task) => (task.id === id ? { ...task, text: newText } : task)),
+    );
   };
 
   return (
@@ -49,11 +55,13 @@ function TaskApp() {
       </Button>
 
       <ul>
-        {tasks.map((task, i) => (
-          <li key={i}>
+        {tasks.map((task) => (
+          <li key={task.id}>
             {task.text}
-
-            <DialogDemo></DialogDemo>
+            <DialogDemo
+              text={task.text}
+              onChange={(e) => handleSetText(task.id, e.target.value)}
+            />
             <Button
               variant="destructive"
               onClick={() => handleDeleteTask(task.id)}
