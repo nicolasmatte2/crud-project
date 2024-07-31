@@ -1,16 +1,41 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "./ui/input";
 import { Button } from "@/components/ui/button";
 import { DialogDemo } from "./DialogDemo";
+import { Trash2 } from "lucide-react";
+import { Save } from "lucide-react";
 
 type ITasks = {
   id: number;
   text: string;
 }[];
 
-function TaskApp() {
-  const [tasks, setTasks] = useState<ITasks>([]);
+export default function CreateTask() {
+  const [tasks, setTasks] = useState<ITasks>(() => {
+    const savedTasks = localStorage.getItem("tasks");
+    return savedTasks ? JSON.parse(savedTasks) : [];
+  });
   const [inputValue, setInputValue] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [text, setText] = useState("");
+
+  useEffect(() => {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+  }, [tasks]);
+
+  const handleSetText = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setText(event.target.value);
+  };
+
+  const handleSetNewTask = (id: number, newText: string) => {
+    setTasks(
+      tasks.map((task) => (task.id === id ? { ...task, text: newText } : task)),
+    );
+  };
+
+  const filteredTasks = tasks.filter((task) =>
+    task.text.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
@@ -18,9 +43,15 @@ function TaskApp() {
     setInputValue(e.target.value);
   };
 
+  const handleSearchChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
+  ) => {
+    setSearchQuery(e.target.value);
+  };
+
   const handleSubmit = () => {
     if (inputValue.trim() === "") {
-      return;
+      return true;
     }
 
     const newTask = {
@@ -36,63 +67,50 @@ function TaskApp() {
     setTasks(tasks.filter((task) => task.id !== id));
   };
 
-  const handleSetText = (id: number, newText: string) => {
-    setTasks(
-      tasks.map((task) => (task.id === id ? { ...task, text: newText } : task)),
-    );
-  };
-
   return (
-    <div className="rounded-lg bg-sky-200 p-10">
-      <div className="mb-5 flex place-items-center">
+    <div className="flex flex-col gap-5 bg-sky-200 p-10 shadow-[8px_7px_0px_-1.5px_rgba(0,0,0,1)] shadow-sky-600">
+      <div className="flex gap-2">
         <Input
-          className="mr-2"
+          className="text-center"
           type="text"
           value={inputValue}
           onChange={handleInputChange}
           placeholder="Digite uma nova tarefa"
         />
         <Button onClick={handleSubmit} variant="outline">
-          Enviar
+          <Save size={18} />
         </Button>
       </div>
-      <div className="flex place-items-center">
-        <ul>
-          {tasks.map((task) => (
-            <li className="m-1 flex items-center" key={task.id}>
-              <div className="flex h-10 w-full rounded-md border border-input bg-background py-2 pl-3 pr-20 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                {task.text}
-              </div>
-              <DialogDemo
-                text={task.text}
-                onChange={(e) => handleSetText(task.id, e.target.value)}
-              />
-              <Button
-                variant="destructive"
-                className=""
-                onClick={() => handleDeleteTask(task.id)}
-              >
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 15 15"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M5.5 1C5.22386 1 5 1.22386 5 1.5C5 1.77614 5.22386 2 5.5 2H9.5C9.77614 2 10 1.77614 10 1.5C10 1.22386 9.77614 1 9.5 1H5.5ZM3 3.5C3 3.22386 3.22386 3 3.5 3H5H10H11.5C11.7761 3 12 3.22386 12 3.5C12 3.77614 11.7761 4 11.5 4H11V12C11 12.5523 10.5523 13 10 13H5C4.44772 13 4 12.5523 4 12V4L3.5 4C3.22386 4 3 3.77614 3 3.5ZM5 4H10V12H5V4Z"
-                    fill="currentColor"
-                    fill-rule="evenodd"
-                    clip-rule="evenodd"
-                  ></path>
-                </svg>
-              </Button>
-            </li>
-          ))}
-        </ul>
-      </div>
+      <Input
+        className="text-center"
+        type="text"
+        value={searchQuery}
+        onChange={handleSearchChange}
+        placeholder="Buscar tarefas"
+      />
+      <ul className="flex flex-col gap-2">
+        {filteredTasks.map((task) => (
+          <li className="flex items-center" key={task.id}>
+            <div className="flex h-10 w-full items-center rounded-md border border-input bg-background pl-2 pr-2">
+              {task.text}
+            </div>
+            <DialogDemo
+              text={task.text}
+              onChange={(e) => handleSetText(e)}
+              onClick={() => handleSetNewTask(task.id, text)}
+              inputValue={text}
+              setInputValue={setText}
+            />
+            <Button
+              variant="destructive"
+              className="hover:bg-red-700"
+              onClick={() => handleDeleteTask(task.id)}
+            >
+              <Trash2 size={16} />
+            </Button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
-
-export default TaskApp;
